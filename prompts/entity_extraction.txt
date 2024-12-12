@@ -1,121 +1,119 @@
 
 -Goal-
 Given a text document that is potentially relevant to this activity and a list of entity types, identify all entities of those types from the text and all relationships among the identified entities.
- 
+
 -Steps-
 1. Identify all entities. For each identified entity, extract the following information:
 - entity_name: Name of the entity, capitalized
-- entity_type: One of the following types: [{entity_types}]
+- entity_type: One of the following types: [rule, ability, game mechanic, game designation, token, card type]
 - entity_description: Comprehensive description of the entity's attributes and activities
 Format each entity as ("entity"{tuple_delimiter}<entity_name>{tuple_delimiter}<entity_type>{tuple_delimiter}<entity_description>)
- 
+
 2. From the entities identified in step 1, identify all pairs of (source_entity, target_entity) that are *clearly related* to each other.
 For each pair of related entities, extract the following information:
 - source_entity: name of the source entity, as identified in step 1
 - target_entity: name of the target entity, as identified in step 1
 - relationship_description: explanation as to why you think the source entity and the target entity are related to each other
-- relationship_strength: a numeric score indicating strength of the relationship between the source entity and target entity
- Format each relationship as ("relationship"{tuple_delimiter}<source_entity>{tuple_delimiter}<target_entity>{tuple_delimiter}<relationship_description>{tuple_delimiter}<relationship_strength>)
- 
+- relationship_strength: an integer score between 1 to 10, indicating strength of the relationship between the source entity and target entity
+Format each relationship as ("relationship"{tuple_delimiter}<source_entity>{tuple_delimiter}<target_entity>{tuple_delimiter}<relationship_description>{tuple_delimiter}<relationship_strength>)
+
 3. Return output in English as a single list of all the entities and relationships identified in steps 1 and 2. Use **{record_delimiter}** as the list delimiter.
- 
-4. When finished, output {completion_delimiter}
- 
-######################
+
+4. If you have to translate into English, just translate the descriptions, nothing else!
+
+5. When finished, output {completion_delimiter}.
+
 -Examples-
 ######################
+
 Example 1:
-Entity_types: ORGANIZATION,PERSON
-Text:
-The Verdantis's Central Institution is scheduled to meet on Monday and Thursday, with the institution planning to release its latest policy decision on Thursday at 1:30 p.m. PDT, followed by a press conference where Central Institution Chair Martin Smith will take questions. Investors expect the Market Strategy Committee to hold its benchmark interest rate steady in a range of 3.5%-3.75%.
-######################
-Output:
-("entity"{tuple_delimiter}CENTRAL INSTITUTION{tuple_delimiter}ORGANIZATION{tuple_delimiter}The Central Institution is the Federal Reserve of Verdantis, which is setting interest rates on Monday and Thursday)
-{record_delimiter}
-("entity"{tuple_delimiter}MARTIN SMITH{tuple_delimiter}PERSON{tuple_delimiter}Martin Smith is the chair of the Central Institution)
-{record_delimiter}
-("entity"{tuple_delimiter}MARKET STRATEGY COMMITTEE{tuple_delimiter}ORGANIZATION{tuple_delimiter}The Central Institution committee makes key decisions about interest rates and the growth of Verdantis's money supply)
-{record_delimiter}
-("relationship"{tuple_delimiter}MARTIN SMITH{tuple_delimiter}CENTRAL INSTITUTION{tuple_delimiter}Martin Smith is the Chair of the Central Institution and will answer questions at a press conference{tuple_delimiter}9)
-{completion_delimiter}
 
-######################
+entity_types: [rule, ability, game mechanic, game designation, token, card type]
+text:
+702.128b A token is “embalmed” if it’s created by a resolving embalm ability.
+------------------------
+output:
+("entity"{tuple_delimiter}Token{tuple_delimiter}token{tuple_delimiter}A token is a game piece that can represent creatures, artifacts, or other items in a game. In this context, it refers specifically to a token created by an embalm ability.){record_delimiter}
+("entity"{tuple_delimiter}Embalmed{tuple_delimiter}ability{tuple_delimiter}A status given to tokens that are created by resolving an embalm ability, which is a specific game mechanic in certain tabletop games.){record_delimiter}
+("relationship"{tuple_delimiter}Token{tuple_delimiter}Embalmed{tuple_delimiter}A token becomes embalmed as a result of the embalm ability being resolved, indicating a direct creation and status change relationship between the ability and the token.{tuple_delimiter}10){completion_delimiter}
+#############################
+
+
 Example 2:
-Entity_types: ORGANIZATION
-Text:
-TechGlobal's (TG) stock skyrocketed in its opening day on the Global Exchange Thursday. But IPO experts warn that the semiconductor corporation's debut on the public markets isn't indicative of how other newly listed companies may perform.
 
-TechGlobal, a formerly public company, was taken private by Vision Holdings in 2014. The well-established chip designer says it powers 85% of premium smartphones.
-######################
-Output:
-("entity"{tuple_delimiter}TECHGLOBAL{tuple_delimiter}ORGANIZATION{tuple_delimiter}TechGlobal is a stock now listed on the Global Exchange which powers 85% of premium smartphones)
-{record_delimiter}
-("entity"{tuple_delimiter}VISION HOLDINGS{tuple_delimiter}ORGANIZATION{tuple_delimiter}Vision Holdings is a firm that previously owned TechGlobal)
-{record_delimiter}
-("relationship"{tuple_delimiter}TECHGLOBAL{tuple_delimiter}VISION HOLDINGS{tuple_delimiter}Vision Holdings formerly owned TechGlobal from 2014 until present{tuple_delimiter}5)
-{completion_delimiter}
+entity_types: [rule, ability, game mechanic, game designation, token, card type]
+text:
+709. Split Cards
+------------------------
+output:
+("entity"{tuple_delimiter}SPLIT CARDS{tuple_delimiter}card type{tuple_delimiter}Split Cards are a type of card in certain tabletop games that have two distinct halves, each with its own set of abilities, costs, and effects. Players can choose which half to play when the card is played.){record_delimiter}{completion_delimiter}
+#############################
 
-######################
+
 Example 3:
-Entity_types: ORGANIZATION,GEO,PERSON
-Text:
-Five Aurelians jailed for 8 years in Firuzabad and widely regarded as hostages are on their way home to Aurelia.
 
-The swap orchestrated by Quintara was finalized when $8bn of Firuzi funds were transferred to financial institutions in Krohaara, the capital of Quintara.
-
-The exchange initiated in Firuzabad's capital, Tiruzia, led to the four men and one woman, who are also Firuzi nationals, boarding a chartered flight to Krohaara.
-
-They were welcomed by senior Aurelian officials and are now on their way to Aurelia's capital, Cashion.
-
-The Aurelians include 39-year-old businessman Samuel Namara, who has been held in Tiruzia's Alhamia Prison, as well as journalist Durke Bataglani, 59, and environmentalist Meggie Tazbah, 53, who also holds Bratinas nationality.
-######################
-Output:
-("entity"{tuple_delimiter}FIRUZABAD{tuple_delimiter}GEO{tuple_delimiter}Firuzabad held Aurelians as hostages)
+entity_types: [rule, ability, game mechanic, game designation, token, card type]
+text:
+Sticker Sheet
+The collection of stickers found on an insert in Unfinity booster packs. See rule 123, “Stickers.”
+------------------------
+output:
+("entity"{tuple_delimiter}Sticker Sheet{tuple_delimiter}token{tuple_delimiter}The collection of stickers found on an insert in Unfinity booster packs)
 {record_delimiter}
-("entity"{tuple_delimiter}AURELIA{tuple_delimiter}GEO{tuple_delimiter}Country seeking to release hostages)
+("entity"{tuple_delimiter}Rule 123{tuple_delimiter}rule{tuple_delimiter}Refers to the use and mechanics of Stickers in the game)
 {record_delimiter}
-("entity"{tuple_delimiter}QUINTARA{tuple_delimiter}GEO{tuple_delimiter}Country that negotiated a swap of money in exchange for hostages)
-{record_delimiter}
-{record_delimiter}
-("entity"{tuple_delimiter}TIRUZIA{tuple_delimiter}GEO{tuple_delimiter}Capital of Firuzabad where the Aurelians were being held)
-{record_delimiter}
-("entity"{tuple_delimiter}KROHAARA{tuple_delimiter}GEO{tuple_delimiter}Capital city in Quintara)
-{record_delimiter}
-("entity"{tuple_delimiter}CASHION{tuple_delimiter}GEO{tuple_delimiter}Capital city in Aurelia)
-{record_delimiter}
-("entity"{tuple_delimiter}SAMUEL NAMARA{tuple_delimiter}PERSON{tuple_delimiter}Aurelian who spent time in Tiruzia's Alhamia Prison)
-{record_delimiter}
-("entity"{tuple_delimiter}ALHAMIA PRISON{tuple_delimiter}GEO{tuple_delimiter}Prison in Tiruzia)
-{record_delimiter}
-("entity"{tuple_delimiter}DURKE BATAGLANI{tuple_delimiter}PERSON{tuple_delimiter}Aurelian journalist who was held hostage)
-{record_delimiter}
-("entity"{tuple_delimiter}MEGGIE TAZBAH{tuple_delimiter}PERSON{tuple_delimiter}Bratinas national and environmentalist who was held hostage)
-{record_delimiter}
-("relationship"{tuple_delimiter}FIRUZABAD{tuple_delimiter}AURELIA{tuple_delimiter}Firuzabad negotiated a hostage exchange with Aurelia{tuple_delimiter}2)
-{record_delimiter}
-("relationship"{tuple_delimiter}QUINTARA{tuple_delimiter}AURELIA{tuple_delimiter}Quintara brokered the hostage exchange between Firuzabad and Aurelia{tuple_delimiter}2)
-{record_delimiter}
-("relationship"{tuple_delimiter}QUINTARA{tuple_delimiter}FIRUZABAD{tuple_delimiter}Quintara brokered the hostage exchange between Firuzabad and Aurelia{tuple_delimiter}2)
-{record_delimiter}
-("relationship"{tuple_delimiter}SAMUEL NAMARA{tuple_delimiter}ALHAMIA PRISON{tuple_delimiter}Samuel Namara was a prisoner at Alhamia prison{tuple_delimiter}8)
-{record_delimiter}
-("relationship"{tuple_delimiter}SAMUEL NAMARA{tuple_delimiter}MEGGIE TAZBAH{tuple_delimiter}Samuel Namara and Meggie Tazbah were exchanged in the same hostage release{tuple_delimiter}2)
-{record_delimiter}
-("relationship"{tuple_delimiter}SAMUEL NAMARA{tuple_delimiter}DURKE BATAGLANI{tuple_delimiter}Samuel Namara and Durke Bataglani were exchanged in the same hostage release{tuple_delimiter}2)
-{record_delimiter}
-("relationship"{tuple_delimiter}MEGGIE TAZBAH{tuple_delimiter}DURKE BATAGLANI{tuple_delimiter}Meggie Tazbah and Durke Bataglani were exchanged in the same hostage release{tuple_delimiter}2)
-{record_delimiter}
-("relationship"{tuple_delimiter}SAMUEL NAMARA{tuple_delimiter}FIRUZABAD{tuple_delimiter}Samuel Namara was a hostage in Firuzabad{tuple_delimiter}2)
-{record_delimiter}
-("relationship"{tuple_delimiter}MEGGIE TAZBAH{tuple_delimiter}FIRUZABAD{tuple_delimiter}Meggie Tazbah was a hostage in Firuzabad{tuple_delimiter}2)
-{record_delimiter}
-("relationship"{tuple_delimiter}DURKE BATAGLANI{tuple_delimiter}FIRUZABAD{tuple_delimiter}Durke Bataglani was a hostage in Firuzabad{tuple_delimiter}2)
+("relationship"{tuple_delimiter}Sticker Sheet{tuple_delimiter}Rule 123{tuple_delimiter}Rule 123 provides the guidelines for the use of Sticker Sheet in the game{tuple_delimiter}10)
 {completion_delimiter}
+#############################
 
-######################
+
+Example 4:
+
+entity_types: [rule, ability, game mechanic, game designation, token, card type]
+text:
+724.5a In a Commander game, a commander that has been exempted from the procedure that restarts the game won’t begin the new game in the command zone. However, it remains that deck’s commander for the new game. See rule 903, “Commander.”
+------------------------
+output:
+("entity"{tuple_delimiter}Commander game{tuple_delimiter}game designation{tuple_delimiter}A game format in which players choose a legendary creature as the commander of their deck. The game has specific rules regarding commanders, including how they interact with the game's restart procedures.)
+{record_delimiter}
+("entity"{tuple_delimiter}Command zone{tuple_delimiter}game mechanic{tuple_delimiter}A designated area where commanders are placed during the game. It is also relevant for certain game actions and rules, such as where a commander goes when it is removed from play.)
+{record_delimiter}
+("entity"{tuple_delimiter}Restart the game{tuple_delimiter}game mechanic{tuple_delimiter}A procedure in the game that resets the game state to its beginning, except for specific exceptions outlined by the rules. Commanders exempted from restarting procedures do not return to the command zone in a new game.)
+{record_delimiter}
+("entity"{tuple_delimiter}Rule 903{tuple_delimiter}rule{tuple_delimiter}Refers to the comprehensive rules that govern the Commander game format, detailing everything from deck construction to specific gameplay mechanics unique to this format.)
+{record_delimiter}
+("relationship"{tuple_delimiter}Commander game{tuple_delimiter}Command zone{tuple_delimiter}The command zone is a key component of Commander games, serving as the designated area for commanders.{tuple_delimiter}10)
+{record_delimiter}
+("relationship"{tuple_delimiter}Commander game{tuple_delimiter}Restart the game{tuple_delimiter}In Commander games, specific rules apply to restarting the game, particularly regarding the position of commanders.{tuple_delimiter}8)
+{record_delimiter}
+("relationship"{tuple_delimiter}Restart the game{tuple_delimiter}Command zone{tuple_delimiter}When the game restarts, commanders that are exempt from the restart procedure do not return to the command zone.{tuple_delimiter}9)
+{record_delimiter}
+("relationship"{tuple_delimiter}Commander game{tuple_delimiter}Rule 903{tuple_delimiter}Rule 903 contains the comprehensive rules for the Commander game format.{tuple_delimiter}10)
+{completion_delimiter}
+#############################
+
+
+Example 5:
+
+entity_types: [rule, ability, game mechanic, game designation, token, card type]
+text:
+Mountaincycling
+See Typecycling.
+------------------------
+output:
+("entity"{tuple_delimiter}MOUNTAINCYCLING{tuple_delimiter}ABILITY{tuple_delimiter}Mountaincycling refers to a specific variant of the cycling ability, allowing players to search their deck for a Mountain card)
+{record_delimiter}
+("entity"{tuple_delimiter}TYPECYCLING{tuple_delimiter}ABILITY{tuple_delimiter}Typecycling is a game mechanic that allows players to discard a card to search their deck for a card of a specific type)
+{record_delimiter}
+("relationship"{tuple_delimiter}MOUNTAINCYCLING{tuple_delimiter}TYPECYCLING{tuple_delimiter}Mountaincycling is a specific form of Typecycling focused on finding Mountain cards{tuple_delimiter}10)
+{completion_delimiter}
+#############################
+
+
+
 -Real Data-
 ######################
-Entity_types: {entity_types}
-Text: {input_text}
+entity_types: [rule, ability, game mechanic, game designation, token, card type]
+text: {input_text}
 ######################
-Output:
+output:

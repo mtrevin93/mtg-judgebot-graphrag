@@ -82,7 +82,7 @@ skip_workflows: []
 
 entity_extraction:
   prompt: "prompts/entity_extraction.txt"
-  entity_types: [organization,person,geo,event]
+  entity_types: [rule, ability, game mechanic, game designation, token, card type]
   max_gleanings: 1
 
 summarize_descriptions:

@@ -1,2 +1,6 @@
 .env
 documents/
+cache/
+input/
+output/
+logs/
