@@ -4,3 +4,5 @@ cache/
 input/
 output/
 logs/
+raw_input/
+rules/

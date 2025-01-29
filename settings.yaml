@@ -9,7 +9,7 @@ encoding_model: cl100k_base # this needs to be matched to your model!
 llm:
   api_key: ${GRAPHRAG_API_KEY} # set this in the generated .env file
   type: openai_chat # or azure_openai_chat
-  model: gpt-4-turbo-preview
+  model: gpt-4o
   model_supports_json: true # recommended if this is available for your model.
   # audience: "https://cognitiveservices.azure.com/.default"
   # api_base: https://<instance>.openai.azure.com
@@ -50,7 +50,7 @@ input:
   file_pattern: ".*\\.txt$"
 
 chunks:
-  size: 1200
+  size: 1024
   overlap: 100
   group_by_columns: [id]
 
@@ -82,7 +82,6 @@ skip_workflows: []
 
 entity_extraction:
   prompt: "prompts/entity_extraction.txt"
-  entity_types: [rule, ability, game mechanic, game designation, token, card type]
   max_gleanings: 1
 
 summarize_descriptions:
@@ -110,7 +109,7 @@ umap:
   enabled: false # if true, will generate UMAP embeddings for nodes
 
 snapshots:
-  graphml: false
+  graphml: True
   embeddings: false
   transient: false
 
