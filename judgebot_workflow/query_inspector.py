@@ -137,7 +137,6 @@ class GraphRAGQueryInspector:
 
     async def execute_query(self, query: str):
         """Execute a query and display all results"""
-        import pdb; pdb.set_trace()  # Debugger will pause here
         print(f"\n=== Executing Query: {query} ===\n")
         
         result = await self.search_engine.asearch(query)
@@ -171,10 +170,13 @@ class GraphRAGQueryInspector:
             print("\nClaims:")
             print(result.context_data["claims"].head())
 
+        # Return the result
+        return result
+
 def main():
     parser = argparse.ArgumentParser(description='Execute and inspect GraphRAG queries')
     parser.add_argument('--query', type=str, required=True, help='The query to execute')
-    parser.add_argument('--input-dir', type=str, default="./output",
+    parser.add_argument('--input-dir', type=str, default="../output",
                       help='Directory containing input parquet files')
     parser.add_argument('--lancedb-uri', type=str, help='URI for LanceDB')
     
