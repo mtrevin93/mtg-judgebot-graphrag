@@ -126,6 +126,11 @@ class GraphRAGQueryInspector:
             "temperature": 0.0,
         }
 
+        SYSTEM_INSTRUCTIONS = """Please always answer by citing exact rules numbers. For example, rule 101.2a states 'text of rule 101.2a'.
+Never give commentary about how a rule is important to gameplay, your job is only to answer the question as factually as possible.
+Never mention generics like tabletop gaming.
+Provide your understanding of the user's question, then the rules and citations, then a summary that is your understanding of the application of the rules to the problem."""
+
         self.search_engine = LocalSearch(
             llm=self.llm,
             context_builder=context_builder,
@@ -133,6 +138,7 @@ class GraphRAGQueryInspector:
             llm_params=llm_params,
             context_builder_params=local_context_params,
             response_type="multiple paragraphs",
+            system_prompt=SYSTEM_INSTRUCTIONS,
         )
 
     async def execute_query(self, query: str):

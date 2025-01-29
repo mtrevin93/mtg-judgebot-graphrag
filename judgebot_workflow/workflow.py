@@ -13,10 +13,8 @@ class GraphRAGWorkflow:
         """
         Process a user query through GraphRAG
         """
-        # Append instruction to cite rules
-        formatted_question = f"{user_question} Please always answer by citing exact rules numbers. For example, rule 101.2a states 'text of rule 101.2a'. Never give commentary about how a rule is important to gameplay, your job is only to answer the question as factually as possible. Never mention generics like tabletop gaming. Provide your understanding of the user's question, then the rules and citations, then a summmary that is your understanding of the application of the rules to the problem."
-        
-        graphrag_result = await self.query_inspector.execute_query(formatted_question)
+        # Send the original question without modifications
+        graphrag_result = await self.query_inspector.execute_query(user_question)
         
         return {
             "response": graphrag_result.response,
