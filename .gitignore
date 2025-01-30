@@ -6,3 +6,5 @@ output/
 logs/
 raw_input/
 rules/
+__pycache__/
+*.pyc

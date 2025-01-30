@@ -16,6 +16,7 @@ pandas = "*"
 tiktoken = "*"
 lancedb = "*"
 pyarrow = "*"
+aiosqlite = "^0.20.0"
 
 
 [build-system]
