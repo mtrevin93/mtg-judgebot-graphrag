@@ -1,6 +1,7 @@
 import os
 import json
 from mtg_cards_api import setup_card_database, insert_card_into_db, insert_ruling_into_db
+import sqlite3
 
 def create_cards_db(cards_file_path: str, rulings_file_path: str, db_path: str):
     """
@@ -51,9 +52,9 @@ def create_cards_db(cards_file_path: str, rulings_file_path: str, db_path: str):
     print("Database creation completed successfully")
 
 if __name__ == "__main__":
-    cards_file_path = '../documents/rulings-20241130100030.json'
-    rulings_file_path = '../documents/oracle-cards-20241130100203.json'
-    db_path = './mtg_cards.sqlite'
+    cards_file_path = 'documents/oracle-cards-20241130100203.json'
+    rulings_file_path = 'documents/rulings-20241130100030.json'
+    db_path = 'db/sqlite/mtg_cards.sqlite'
 
     # Ensure the db directory exists
     os.makedirs(os.path.dirname(db_path), exist_ok=True)
