@@ -160,43 +160,51 @@ def fetch_all_card_names(database_path: str) -> List[str]:
 
     return card_names
 
-def fetch_card_by_name(database_path: str, card_name: str) -> List[Dict[str, Any]]:
+def fetch_card_by_name(database_path: str, card_name: str, exact_match: bool = False) -> List[Dict[str, Any]]:
     """
-    Fetch specific card details from the database that partially match the given name.
+    Fetch a card by name from the database.
+    
+    Args:
+        database_path: Path to the SQLite database
+        card_name: Name of the card to search for
+        exact_match: If True, only return exact name matches. If False, use LIKE for partial matches.
+    
+    Returns:
+        List of matching card dictionaries with their rulings
     """
     conn = sqlite3.connect(database_path)
-    conn.row_factory = sqlite3.Row
     c = conn.cursor()
-
-    # Only select the fields we care about
-    c.execute("""
-        SELECT name, mana_cost, cmc, type_line, oracle_text, power,
-               toughness, colors, color_identity, keywords, legalities,
-               oracle_id
-        FROM cards WHERE name LIKE ?
-    """, (f"%{card_name}%",))
-    card_results = c.fetchall()
-
-    matching_cards = []
-
-    for card_result in card_results:
-        card_dict = dict(card_result)
-
-        # Parse JSON strings back to Python objects for specific fields
-        for field in ['colors', 'color_identity', 'keywords', 'legalities']:
-            if card_dict[field] and isinstance(card_dict[field], str):
-                try:
-                    card_dict[field] = json.loads(card_dict[field])
-                except json.JSONDecodeError:
-                    pass
-
-        # Modified rulings fetch to match storage format
+    
+    # Use = for exact match, LIKE for partial match
+    if exact_match:
+        query = "SELECT * FROM cards WHERE name = ?"
+    else:
+        query = "SELECT * FROM cards WHERE name LIKE ?"
+        card_name = f"%{card_name}%"
+    
+    c.execute(query, (card_name,))
+    cards = c.fetchall()
+    
+    # Get column names
+    c.execute("PRAGMA table_info(cards)")
+    columns = [column[1] for column in c.fetchall()]
+    
+    results = []
+    for card in cards:
+        card_dict = dict(zip(columns, card))
+        
+        # Fetch rulings for this card
         c.execute("SELECT * FROM rulings WHERE oracle_id = ?", (card_dict['oracle_id'],))
         rulings = c.fetchall()
-        card_dict['rulings'] = [dict(ruling) for ruling in rulings]
-
-        matching_cards.append(card_dict)
-
+        
+        # Get ruling column names
+        c.execute("PRAGMA table_info(rulings)")
+        ruling_columns = [column[1] for column in c.fetchall()]
+        
+        # Convert rulings to list of dicts
+        card_dict['rulings'] = [dict(zip(ruling_columns, ruling)) for ruling in rulings]
+        
+        results.append(card_dict)
+    
     conn.close()
-
-    return matching_cards
+    return results
