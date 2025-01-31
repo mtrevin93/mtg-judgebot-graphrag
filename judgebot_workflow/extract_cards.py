@@ -1,5 +1,12 @@
-from typing import List, Dict, Any
+import os
+import sys
 import re
+from typing import List, Dict, Any
+
+# Add project root to Python path
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(project_root)
+
 from db.mtg_cards_api import fetch_card_by_name
 
 def extract_and_fetch_cards(database_path: str, text: str) -> List[Dict[str, Any]]:
