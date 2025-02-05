@@ -175,11 +175,11 @@ def fetch_card_by_name(database_path: str, card_name: str, exact_match: bool = F
     conn = sqlite3.connect(database_path)
     c = conn.cursor()
     
-    # Use = for exact match, LIKE for partial match
+    # Use = for exact match, LIKE for partial match, with COLLATE NOCASE for case insensitive search
     if exact_match:
-        query = "SELECT * FROM cards WHERE name = ?"
+        query = "SELECT * FROM cards WHERE name COLLATE NOCASE = ?"
     else:
-        query = "SELECT * FROM cards WHERE name LIKE ?"
+        query = "SELECT * FROM cards WHERE name COLLATE NOCASE LIKE ?"
         card_name = f"%{card_name}%"
     
     c.execute(query, (card_name,))
