@@ -1,160 +1,125 @@
 import os
-import sys
-from typing import List, Dict, Any
-from langchain_openai import ChatOpenAI
-from langchain.prompts import ChatPromptTemplate
+from dotenv import load_dotenv
+from typing import List, Dict
+from anthropic import Anthropic
+from extract_cards import extract_and_fetch_cards
 
-# Add project root to Python path
-project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(project_root)
+# Load environment variables from .env file
+load_dotenv()
 
-from judgebot_workflow.local_search import MTGSearchEngine
-from judgebot_workflow.extract_cards import extract_and_fetch_cards
+class MTGJudgeWorkflow:
+    def __init__(self):
+        api_key = os.getenv("ANTROPIC_API_KEY")
+        if not api_key:
+            raise ValueError("ANTROPIC_API_KEY not found in environment variables")
+        
+        self.client = Anthropic(api_key=api_key)
+        # Define paths relative to the current file
+        base_dir = os.path.dirname(os.path.dirname(__file__))
+        self.rules_path = os.path.join(base_dir, "documents", "rules.txt")
+        self.database_path = os.path.join(base_dir, "db", "sqlite", "mtg_cards.sqlite")
+        self.cached_rules = self._prepare_cached_rules()
 
-JUDGE_SYSTEM_PROMPT = """You are a certified MTG judge from the MTG judge program. Using only the knowledge provided and WITHOUT using your general knowledge of Magic: The Gathering, you will answer the user's query.
+    def _prepare_cached_rules(self) -> Dict[str, List[dict]]:
+        """Prepare the system messages with cached rules content"""
+        try:
+            with open(self.rules_path, 'r', encoding='utf-8') as f:
+                rules_content = f.read()
+        except Exception as e:
+            print(f"Error reading rules file: {e}")
+            rules_content = "Error: Could not load comprehensive rules."
 
-You will provide:
-1. A clear answer based only on the provided rules and sources
-2. A list of the specific rule numbers used
-3. A BRIEF explanation of your ruling
+        return {
+            "system": [
+                {
+                    "type": "text",
+                    "text": "You are an expert Magic: The Gathering judge. You provide accurate rulings based on comprehensive rules and card interactions."
+                },
+                {
+                    "type": "text",
+                    "text": rules_content,
+                    # "cache_control": {"type": "ephemeral"}
+                },
+                {
+                    "type": "text",
+                    "text": "When providing rulings: Always cite relevant rules sections, explain clearly, and address all parts of the question."
+                }
+            ]
+        }
 
-Information is in the following order of importance:
-1. Card text and the formal rulings, if any.
-2. The rules and sources.
+    def _format_card_info(self, cards: List[dict]) -> str:
+        """Format card information with double brackets"""
+        if not cards:
+            return ""
+        
+        formatted = "Referenced cards:\n"
+        for card in cards:
+            formatted += f"\n[[{card['name']}]]:\n"
+            formatted += f"Type: {card['type_line']}\n"
+            if card['oracle_text']:
+                formatted += f"Text: {card['oracle_text']}\n"
+            if card['rulings']:
+                formatted += "Rulings:\n"
+                for ruling in card['rulings']:
+                    formatted += f"- {ruling['comment']}\n"
+        return formatted
 
-Format your response as:
-RULING: (your answer)
-RULES USED: (list of rule numbers)
-EXPLANATION: (brief explanation)"""
-
-class GraphRAGWorkflow:
-    def __init__(self, input_dir: str, database_path: str):
-        """Initialize the workflow with GraphRAG and LangChain"""
-        self.search_engine = MTGSearchEngine(
-            input_dir=os.path.join(project_root, "output"),
-            lancedb_uri=os.path.join(project_root, "output", "lancedb")
+    async def process_query(self, question: str) -> dict:
+        """Process a user query and get a judge ruling"""
+        # Extract card references and get their info
+        cards = extract_and_fetch_cards(self.database_path, question)
+        
+        # Format card information
+        card_info = self._format_card_info(cards)
+        
+        messages = [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": f"{card_info}\n\n{question}"
+                    }
+                ]
+            }
+        ]
+        
+        response = self.client.messages.create(
+            model="claude-3-5-sonnet-20241022",
+            max_tokens=1024,
+            system=self.cached_rules["system"],
+            messages=messages
         )
-        self.database_path = database_path
-        
-        # Initialize LangChain components
-        self.judge_llm = ChatOpenAI(
-            model="gpt-4o",
-            temperature=0
-        )
-        
-        self.judge_prompt = ChatPromptTemplate.from_messages([
-            ("system", JUDGE_SYSTEM_PROMPT),
-            ("user", """Question: {question}
-
-Card Information:
-{card_context}
-
-Relevant Rules and Sources:
-{sources}""")
-        ])
-
-    async def process_query(self, user_question: str) -> dict:
-        """Process a user query through GraphRAG and get a judge ruling"""
-        # Extract any card references from the question
-        cards = extract_and_fetch_cards(self.database_path, user_question)
-        
-        # Format card information for context
-        card_context = ""
-        if cards:
-            card_context = "Referenced cards:\n"
-            for card in cards:
-                card_context += f"\n{card['name']}:\n"
-                card_context += f"Type: {card['type_line']}\n"
-                if card['oracle_text']:
-                    card_context += f"Text: {card['oracle_text']}\n"
-                if card['rulings']:
-                    card_context += "Rulings:\n"
-                    for ruling in card['rulings']:
-                        card_context += f"- {ruling['comment']}\n"
-
-        # Get relevant rules and sources from GraphRAG
-        graphrag_result = await self.search_engine.search(user_question)
-        
-        # Format sources for the judge
-        sources_text = ""
-        if "sources" in graphrag_result["context_data"]:
-            for idx, source in graphrag_result["context_data"]["sources"].iterrows():
-                sources_text += f"\nSource {idx + 1}:\n"
-                if "title" in source:
-                    sources_text += f"Title: {source['title']}\n"
-                if "text" in source:
-                    sources_text += f"Text: {source['text']}\n"
-                sources_text += "-" * 40 + "\n"
-        
-        # Get the judge's ruling
-        judge_chain = self.judge_prompt | self.judge_llm
-        judge_response = judge_chain.invoke({
-            "question": user_question,
-            "card_context": card_context,
-            "sources": sources_text
-        })
         
         return {
-            "graphrag_response": graphrag_result["response"],
-            "judge_response": judge_response.content,
-            "context_data": graphrag_result.get("context_data", {}),
-            "context_text": graphrag_result.get("context_text", ""),
-            "referenced_cards": cards
+            "question": question,
+            "response": response.content[0].text,
+            "usage": response.usage,
+            "cards": cards
         }
 
 async def main():
-    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    workflow = MTGJudgeWorkflow()
     
-    workflow = GraphRAGWorkflow(
-        input_dir=os.path.join(project_root, "output"),
-        database_path=os.path.join(project_root, "db", "sqlite", "mtg_cards.sqlite")
-    )
+    questions = [
+        "if i have [[thrasios, triton hero]] and [[galadriel of Lothlórien]] and i use thrasios' ability and reveal a land ontop what would happen?\n\nmy guess is thrasios resolves and then puts the land in play then galadriel reveals the next top card and I can put that one into play if its a land"
+    ]
     
-    question = "[[Austere command]] resolves differently than [[prismari command]] So [[austere command]] destroys any artifacts/enchantments before it would any creatures so those cards wouldnt see your creatures dying. [[Prismari command]] doesnt follow the same rule? Say it deals 2 damage to [[orcish bowmasters]] and draw two discard two. Why does the [[orcish bowmasters]] see the draw two?"
-    result = await workflow.process_query(question)
-    
-    print("\n" + "="*80)
-    print("QUESTION:")
-    print("="*80)
-    print(question)
-    
-    print("\n" + "="*80)
-    print("GRAPHRAG RESPONSE:")
-    print("="*80)
-    print(result["graphrag_response"])
-    
-    print("\n" + "="*80)
-    print("JUDGE RESPONSE:")
-    print("="*80)
-    print(result["judge_response"])
-    
-    print("\n" + "="*80)
-    print("SOURCES USED:")
-    print("="*80)
-    if "sources" in result["context_data"]:
-        for idx, source in result["context_data"]["sources"].iterrows():
-            print(f"\nSource {idx + 1}:")
-            print(f"Title: {source.get('title', 'N/A')}")
-            print(f"Text: {source.get('text', 'N/A')}")
-            print("-" * 40)
-    else:
-        print("No sources found in context data")
-    
-    print("\n" + "="*80)
-    print("REFERENCED CARDS:")
-    print("="*80)
-    if result["referenced_cards"]:
-        for card in result["referenced_cards"]:
-            print(f"\n{card['name']}:")
-            print(f"Type: {card['type_line']}")
-            if card['oracle_text']:
-                print(f"Text: {card['oracle_text']}")
-            if card['rulings']:
-                print("\nRulings:")
-                for ruling in card['rulings']:
-                    print(f"- {ruling['comment']}")
-    else:
-        print("No cards referenced")
+    for i, question in enumerate(questions, 1):
+        print(f"\n{'='*80}")
+        print(f"QUESTION {i}:")
+        print(f"{'='*80}")
+        print(question)
+        
+        result = await workflow.process_query(question)
+        
+        print(f"\nRESPONSE:")
+        print(f"{'='*80}")
+        print(result["response"])
+        print(f"\nUsage stats:")
+        print(f"{'='*80}")
+        print(result["usage"])
+        print("\n")
 
 if __name__ == "__main__":
     import asyncio

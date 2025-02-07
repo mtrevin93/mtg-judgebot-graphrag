@@ -52,8 +52,8 @@ def create_cards_db(cards_file_path: str, rulings_file_path: str, db_path: str):
     print("Database creation completed successfully")
 
 if __name__ == "__main__":
-    cards_file_path = 'documents/oracle-cards-20241130100203.json'
-    rulings_file_path = 'documents/rulings-20241130100030.json'
+    cards_file_path = '../documents/oracle-cards-20250206220529.json'
+    rulings_file_path = '../documents/rulings-20250206220029.json'
     db_path = 'db/sqlite/mtg_cards.sqlite'
 
     # Ensure the db directory exists
